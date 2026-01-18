@@ -1,89 +1,64 @@
 import { useState, useEffect } from 'react';
+import { PasswordGate } from './components/PasswordGate';
 import { IndividualDemo } from './components/IndividualDemo';
 import { CoachDemo } from './components/CoachDemo';
-import { User, Users } from 'lucide-react';
 
 export default function App() {
-  // Check URL hash for locked view (works better with Figma hosting)
-  const [urlHash, setUrlHash] = useState(window.location.hash.slice(1)); // Remove the #
-  
+  const [accessLevel, setAccessLevel] = useState<'none' | 'individual' | 'coach'>('none');
+  const [currentView, setCurrentView] = useState<'individual' | 'coach'>('individual');
+
+  // Check URL hash on mount
   useEffect(() => {
-    const handleHashChange = () => {
-      setUrlHash(window.location.hash.slice(1));
-    };
-    window.addEventListener('hashchange', handleHashChange);
-    return () => window.removeEventListener('hashchange', handleHashChange);
+    const hash = window.location.hash.slice(1);
+    if (hash === 'individual' || hash === 'coach') {
+      setCurrentView(hash);
+    }
   }, []);
-  
-  // If hash is 'individual' or 'coach', lock to that view and hide toggle
-  const isIndividualOnly = urlHash === 'individual';
-  const isCoachOnly = urlHash === 'coach';
-  
-  const [perspective, setPerspective] = useState<'individual' | 'coach'>(
-    isCoachOnly ? 'coach' : 'individual'
-  );
+
+  // Update URL when view changes
+  useEffect(() => {
+    window.location.hash = currentView;
+  }, [currentView]);
+
+  if (accessLevel === 'none') {
+    return <PasswordGate onAccessGranted={setAccessLevel} />;
+  }
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Header */}
-      <header className="bg-[#2B2B2B] text-white py-6 px-4">
-        <div className="max-w-6xl mx-auto">
-          <h1 className="text-3xl font-bold mb-2">Functional Blueprint™</h1>
-          <p className="text-gray-300">Individualized fitness programs that scale</p>
-        </div>
-      </header>
-
-      {/* Perspective Toggle - Hidden if view is locked */}
-      {!isIndividualOnly && !isCoachOnly && (
-        <div className="bg-gray-100 border-b border-gray-200">
-          <div className="max-w-6xl mx-auto px-4 py-6">
-            <p className="text-sm text-gray-600 mb-3">See how Functional Blueprint works for:</p>
-            <div className="flex gap-3">
+      {/* Toggle for Coach Access */}
+      {accessLevel === 'coach' && (
+        <div className="fixed top-4 right-4 z-50 bg-white rounded-lg shadow-lg p-3 border border-gray-200">
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-medium text-gray-700">View as:</span>
+            <div className="flex gap-2">
               <button
-                onClick={() => setPerspective('individual')}
-                className={`flex-1 py-3 px-4 rounded-lg font-medium transition-all flex items-center justify-center gap-2 ${
-                  perspective === 'individual'
-                    ? 'bg-[#2B2B2B] text-white shadow-md'
-                    : 'bg-white text-gray-700 border border-gray-300 hover:border-gray-400'
+                onClick={() => setCurrentView('individual')}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  currentView === 'individual'
+                    ? 'bg-[#2d2d2d] text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >
-                <User className="w-5 h-5" />
-                Individuals
+                Individual
               </button>
               <button
-                onClick={() => setPerspective('coach')}
-                className={`flex-1 py-3 px-4 rounded-lg font-medium transition-all flex items-center justify-center gap-2 ${
-                  perspective === 'coach'
-                    ? 'bg-[#2B2B2B] text-white shadow-md'
-                    : 'bg-white text-gray-700 border border-gray-300 hover:border-gray-400'
+                onClick={() => setCurrentView('coach')}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  currentView === 'coach'
+                    ? 'bg-[#2d2d2d] text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >
-                <Users className="w-5 h-5" />
-                Coaches
+                Coach
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Demo Content */}
-      <main className="max-w-6xl mx-auto px-4 py-8">
-        {perspective === 'individual' ? <IndividualDemo /> : <CoachDemo />}
-      </main>
-
-      {/* Footer CTA */}
-      <div className="bg-[#2B2B2B] text-white py-12 px-4 mt-16">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-2xl font-bold mb-4">Join Our Founding Members</h2>
-          <p className="text-gray-300 mb-6 max-w-2xl mx-auto">
-            Get early access to Functional Blueprint and help shape the future of individualized fitness coaching.
-            Launching April 2026.
-          </p>
-          <button className="bg-white text-[#2B2B2B] px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
-            Get Early Access
-          </button>
-        </div>
-      </div>
+      {/* Render appropriate demo */}
+      {currentView === 'individual' ? <IndividualDemo /> : <CoachDemo />}
     </div>
   );
 }
